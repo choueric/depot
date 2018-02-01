@@ -45,6 +45,14 @@ var (
 	errAddrType      = errors.New("socks invalid address type")
 )
 
+func getTargetMethod(config *depot.Config) int {
+	if config.UserName == "" {
+		return METHOD_NONE
+	} else {
+		return METHOD_USERNAME
+	}
+}
+
 /*
 client:
   +----+----------+----------+
@@ -87,8 +95,9 @@ func socksHandShake(conn net.Conn) (err error) {
 	}
 
 	m := METHOD_DENY
+	targetMethod := getTargetMethod(config)
 	for i := METHODS; i < msgLen; i++ {
-		if int(buf[i]) == METHOD_USERNAME {
+		if int(buf[i]) == targetMethod {
 			m = METHOD_USERNAME
 			break
 		}
