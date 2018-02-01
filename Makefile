@@ -25,3 +25,8 @@ test:
 
 curl:
 	curl --socks5 127.0.0.1:8864 --proxy-user user:password www.baidu.com
+
+# ncat is a tool in nmap and should at least above version 7 to support socks5
+ssh:
+	ssh -o ProxyCommand='ncat --proxy 127.0.0.1:8864 --proxy-type socks5 \
+		--proxy-auth user:password %h %p' 127.0.0.1 -p 22
