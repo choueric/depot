@@ -36,6 +36,10 @@ func (r *ReqAddr) Address() string {
 	return net.JoinHostPort(r.Host, r.Port)
 }
 
+func (r *ReqAddr) String() string {
+	return r.Address()
+}
+
 func NewReqAddr(raw []byte) (*ReqAddr, error) {
 	if len(raw) < 4 {
 		return nil, errors.New("socksraw too short")

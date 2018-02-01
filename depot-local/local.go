@@ -66,7 +66,7 @@ func getRequest(server net.Conn) (*depot.ReqAddr, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbgLog.Printf("socks request: %v\n", reqAddr)
+	dbgLog.Println("socks request:", reqAddr)
 
 	return reqAddr, nil
 }
@@ -93,7 +93,7 @@ func handleRequest(reqAddr *depot.ReqAddr, server, port string) error {
 	// TODO: now request the web
 	app, err := net.Dial("tcp", reqAddr.Address())
 	if err != nil {
-		clog.Error("error connecting to:", reqAddr.Address())
+		clog.Error("error connecting to:", reqAddr)
 		return err
 	}
 	defer func() {

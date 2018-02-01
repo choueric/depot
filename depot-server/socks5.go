@@ -270,7 +270,7 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 		clog.Error("error getting request:", err)
 		return
 	}
-	dbgLog.Printf("request address: %v\n", reqAddr.Address())
+	dbgLog.Println("request address:", reqAddr)
 
 	// handle the request to local
 	tunnelConn, err := dialTunnel(controlConn, reqAddr)
@@ -287,6 +287,6 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 	go depot.PipeThenClose(socksConn, tunnelConn)
 	depot.PipeThenClose(tunnelConn, socksConn)
 	closed = true
-	dbgLog.Println("closed connection to", reqAddr.Address())
+	dbgLog.Println("closed connection to", reqAddr)
 	return nil
 }
