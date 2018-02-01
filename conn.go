@@ -48,7 +48,7 @@ func NewReqAddr(raw []byte) (*AddrReq, error) {
 	parsePort := func(p []byte) string {
 		pp := int(binary.BigEndian.Uint16(p))
 		// fix transmission remote's endianess bug
-		if pp == 33571 { // 33571=0x8323, 0x2383=9091
+		if pp == 33571 || pp == 50111 { // 33571=0x8323, 0x2383=9091
 			pp = int(binary.LittleEndian.Uint16(p))
 		}
 		return strconv.Itoa(pp)
