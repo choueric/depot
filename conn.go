@@ -45,24 +45,29 @@ func NewReqAddr(raw []byte) (*AddrReq, error) {
 		return nil, errors.New("socksraw too short")
 	}
 
-	var addrReq AddrReq
+	parsePort := func(p []byte) string {
+		pp := int(binary.BigEndian.Uint16(p))
+		// fix transmission remote's endianess bug
+		if pp == 33571 { // 33571=0x8323, 0x2383=9091
+			pp = int(binary.LittleEndian.Uint16(p))
+		}
+		return strconv.Itoa(pp)
+	}
 
+	var addrReq AddrReq
 	switch raw[0] {
 	case 0x01:
 		addrReq.Atype = int(raw[0])
 		addrReq.Host = net.IP(raw[1 : 1+net.IPv4len]).String()
-		port := int(binary.BigEndian.Uint16(raw[1+net.IPv4len:]))
-		addrReq.Port = strconv.Itoa(port)
+		addrReq.Port = parsePort(raw[1+net.IPv4len:])
 	case 0x04:
 		addrReq.Atype = int(raw[0])
 		addrReq.Host = net.IP(raw[1 : 1+net.IPv6len]).String()
-		port := int(binary.BigEndian.Uint16(raw[1+net.IPv6len:]))
-		addrReq.Port = strconv.Itoa(port)
+		addrReq.Port = parsePort(raw[1+net.IPv6len:])
 	case 0x03:
 		addrReq.Atype = int(raw[0])
 		addrReq.Host = string(raw[2 : 2+raw[1]])
-		port := int(binary.BigEndian.Uint16(raw[2+raw[1]:]))
-		addrReq.Port = strconv.Itoa(port)
+		addrReq.Port = parsePort(raw[2+raw[1]:])
 	default:
 		return nil, errors.New("invalid atype in socksraw")
 	}

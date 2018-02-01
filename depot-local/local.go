@@ -91,7 +91,6 @@ func handleRequest(addrReq *depot.AddrReq, server, port string) error {
 		return err
 	}
 
-	// TODO: now request the web
 	appConn, err := net.Dial("tcp", addrReq.Address())
 	if err != nil {
 		clog.Error("error connecting to:", addrReq)
