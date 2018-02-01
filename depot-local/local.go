@@ -54,7 +54,7 @@ func handShake(server net.Conn) error {
 	return nil
 }
 
-func getRequest(server net.Conn) (*depot.ReqAddr, error) {
+func getRequest(server net.Conn) (*depot.AddrReq, error) {
 	buf := make([]byte, 256)
 	n, err := server.Read(buf)
 	if err != nil {
@@ -62,17 +62,17 @@ func getRequest(server net.Conn) (*depot.ReqAddr, error) {
 	}
 	dbgLog.Println("receive socksraw:", buf[0:n])
 
-	reqAddr, err := depot.NewReqAddr(buf[0:n])
+	addrReq, err := depot.NewReqAddr(buf[0:n])
 	if err != nil {
 		return nil, err
 	}
-	dbgLog.Println("socks request:", reqAddr)
+	dbgLog.Println("socks request:", addrReq)
 
-	return reqAddr, nil
+	return addrReq, nil
 }
 
-func handleRequest(reqAddr *depot.ReqAddr, server, port string) error {
-	peer, err := net.Dial("tcp", server+":"+port)
+func handleRequest(addrReq *depot.AddrReq, server, port string) error {
+	tunnelConn, err := net.Dial("tcp", net.JoinHostPort(server, port))
 	if err != nil {
 		clog.Fatal("error connecting to %s:%s: %v\n", server, port, err)
 	}
@@ -80,50 +80,52 @@ func handleRequest(reqAddr *depot.ReqAddr, server, port string) error {
 	closed := false
 	defer func() {
 		if !closed {
-			peer.Close()
+			tunnelConn.Close()
 		}
 	}()
 
-	dbgLog.Println("send socksraw:", reqAddr.Raw)
-	_, err = peer.Write(reqAddr.Raw)
+	// send tunnel handshake
+	dbgLog.Println("send tunnel handshake:", addrReq.Raw)
+	_, err = tunnelConn.Write(addrReq.Raw)
 	if err != nil {
 		return err
 	}
 
 	// TODO: now request the web
-	app, err := net.Dial("tcp", reqAddr.Address())
+	appConn, err := net.Dial("tcp", addrReq.Address())
 	if err != nil {
-		clog.Error("error connecting to:", reqAddr)
+		clog.Error("error connecting to:", addrReq)
 		return err
 	}
 	defer func() {
 		if !closed {
-			app.Close()
+			appConn.Close()
 		}
 	}()
 
-	go depot.PipeThenClose(peer, app)
-	depot.PipeThenClose(app, peer)
+	go depot.PipeThenClose(tunnelConn, appConn)
+	depot.PipeThenClose(appConn, tunnelConn)
 	closed = true
 	return nil
 }
 
 func run(server, port string) {
 	dbgLog.Printf("connect to server %s:%s\n", server, port)
-	peer, err := net.Dial("tcp", server+":"+port)
+	serverConn, err := net.Dial("tcp", server+":"+port)
 	if err != nil {
 		clog.Fatal(err)
 	}
+	defer serverConn.Close()
 
-	err = handShake(peer)
+	err = handShake(serverConn)
 	if err != nil {
 		clog.Fatal("error handshaking with server: ", err)
 	}
 
 	for {
-		req, err := getRequest(peer)
+		req, err := getRequest(serverConn)
 		if err != nil {
-			clog.Error("get request from tunnel fail: ", err)
+			clog.Error("get request from server fail: ", err)
 			if err == io.EOF {
 				os.Exit(0)
 			}

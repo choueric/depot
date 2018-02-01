@@ -161,7 +161,7 @@ func socksAuthticate(conn net.Conn) (err error) {
    | 1  |  1  | X'00' |  1   | Variable |    2     |
    +----+-----+-------+------+----------+----------+
 */
-func getSocksRequest(conn net.Conn) (reqAddr *depot.ReqAddr, err error) {
+func getSocksRequest(conn net.Conn) (addrReq *depot.AddrReq, err error) {
 	buf := make([]byte, 263)
 	var n int
 	depot.SetReadTimeout(conn)
@@ -203,7 +203,7 @@ func getSocksRequest(conn net.Conn) (reqAddr *depot.ReqAddr, err error) {
 		return
 	}
 
-	reqAddr, err = depot.NewReqAddr(buf[ATYP:msgLen])
+	addrReq, err = depot.NewReqAddr(buf[ATYP:msgLen])
 	if err != nil {
 		return
 	}
@@ -223,8 +223,8 @@ func getSocksRequest(conn net.Conn) (reqAddr *depot.ReqAddr, err error) {
 
 // dialTunnel sends request address to local and waits for local's new tunnel
 // connection, shakes hand with it.
-func dialTunnel(ctrlConn net.Conn, reqAddr *depot.ReqAddr) (net.Conn, error) {
-	if _, err := ctrlConn.Write(reqAddr.Raw); err != nil {
+func dialTunnel(ctrlConn net.Conn, addrReq *depot.AddrReq) (net.Conn, error) {
+	if _, err := ctrlConn.Write(addrReq.Raw); err != nil {
 		return nil, err
 	}
 	c := <-tunnelChan
@@ -239,7 +239,7 @@ func dialTunnel(ctrlConn net.Conn, reqAddr *depot.ReqAddr) (net.Conn, error) {
 	}
 	dbgLog.Println("receive handshake of local:", buf[0:n])
 
-	if !bytes.Equal(buf[0:n], reqAddr.Raw) {
+	if !bytes.Equal(buf[0:n], addrReq.Raw) {
 		return nil, errors.New("socksraw does not match")
 	}
 	return c, nil
@@ -265,15 +265,15 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 		return
 	}
 
-	reqAddr, err := getSocksRequest(socksConn)
+	addrReq, err := getSocksRequest(socksConn)
 	if err != nil {
 		clog.Error("error getting request:", err)
 		return
 	}
-	dbgLog.Println("request address:", reqAddr)
+	dbgLog.Println("request address:", addrReq)
 
 	// handle the request to local
-	tunnelConn, err := dialTunnel(controlConn, reqAddr)
+	tunnelConn, err := dialTunnel(controlConn, addrReq)
 	if err != nil {
 		clog.Error("Failed connect to local")
 		return
@@ -287,6 +287,6 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 	go depot.PipeThenClose(socksConn, tunnelConn)
 	depot.PipeThenClose(tunnelConn, socksConn)
 	closed = true
-	dbgLog.Println("closed connection to", reqAddr)
+	dbgLog.Println("closed connection to", addrReq)
 	return nil
 }
