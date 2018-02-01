@@ -119,6 +119,15 @@ user/password sub-authentication
 +----+------+----------+------+----------+
 | 1  |   1  | 1 to 255 |  1   | 1 to 255 |
 +----+------+----------+------+----------+
+
++----+--------+
+|VER | STATUS |
++----+--------+
+| 1  |    1   |
++----+--------+
+
+VER: 0x01
+STATUS: 0x00, sucess. others, fail
 */
 func socksAuthticate(conn net.Conn) (err error) {
 	buf := make([]byte, 257) // 255 + 2
@@ -150,10 +159,10 @@ func socksAuthticate(conn net.Conn) (err error) {
 	dbgLog.Println("password:", password)
 
 	if username != config.UserName || password != config.Password {
-		_, err = conn.Write([]byte{socksVer5, 0x01})
+		_, err = conn.Write([]byte{0x01, 0x01})
 		return errAuth
 	}
-	_, err = conn.Write([]byte{socksVer5, 0x00})
+	_, err = conn.Write([]byte{0x01, 0x00})
 	return nil
 }
 
