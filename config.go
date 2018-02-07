@@ -8,16 +8,13 @@ import (
 )
 
 type Config struct {
-	// common
-	ServerAddr string `json:"server_addr"`
 	ServerPort int    `json:"server_port"`
+	ServerAddr string `json:"server_addr"`
 	TunnelPort int    `json:"tunnel_port"`
+	UserName   string `json:"user_name"`
+	Password   string `json:"password"`
 	Timeout    int    `json:"timeout"` // unit: second
 	Debug      bool   `json:"debug"`
-	// server
-	UserName string `json:"user_name"`
-	Password string `json:"password"`
-	// local
 	// internal
 	jc   interface{} // must be interface{}, otherwise panic
 	path string      // path of the configuration file
