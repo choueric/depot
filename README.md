@@ -10,6 +10,23 @@ Proxy program using socks5
 client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
 ```
 
+# connections
+
+- control connection
+  - connect server and local
+  - send socks request from server to local
+  - send alive message from local to server
+- socks connection
+  - connect client and server
+  - send socks request from client to server
+  - for pipe
+- tunnel connection
+  - connect server and local
+  - for pipe
+- app connection
+  - connect local and app
+  - for pipe
+
 # process
 
 1. Server listens on the control port and socks port.
@@ -23,7 +40,7 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
 ```
 
 2. Local connects to the control port, and establish a control connection by
-   handshaking.
+   handshaking. Local will wait for socks request on this connection.
    l->c: "hello server"
    c->l: "hello local"
 ```
@@ -121,13 +138,37 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
                            +---+
                            | C |
                            +---+
+                              +-+                     +-+
+                              |c|<------------------->|l|
+                              +-+     [ctrlConn]      +-+
+                           +---+                      +-+               +-+
+                           | S |                      |b|<------------->|a|
+                           +---+                      +-+   [appConn]   +-+
+    +-+                   +-+
+    |r|<----------------->|s|
+    +-+   [socksConn]     +-+
+                           +---+
+                           | T |
+                           +---+
+						      +-+  connect/handshake  +-+
+							  |t|<------------------->|d|
+						      +-+     [tunnelConn]    +-+
+```
+
+8. At this time, all necessary connetions are already established. Pipe them
+   together (s&t, d&b) and the connection between client and app will work
+   well. Client can communicate with app with socket r.
+```
+                           +---+
+                           | C |
+                           +---+
                               +-+       alive         +-+
                               |c|<------------------->|l|
                               +-+      [ctrlConn]     +-+
                            +---+                        
                            | S |                        
                            +---+                        
-    +-+                   +-+ +-+     handshake     +-+ +-+                +-+
+    +-+                   +-+ +-+                   +-+ +-+                +-+
     |r|<----------------->|s|-|t|<----------------->|d|-|b|<-------------->|a|
     +-+   [socksConn]     +-+ +-+     [tunnelConn]  +-+ +-+    [appConn]   +-+
                            +---+
@@ -135,8 +176,6 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
                            +---+
 ```
 
-8. At this time, the pipeline is establish (like below). Client can communicate
-    with app with socket r.
 
          socksConn <--> tunnelConn <--> appConn
 		 
@@ -150,4 +189,5 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
 - [ ] local should try to connect to server repeatly and send heartbeat message
       to server after connecting.
 - [ ] provide methods to watch the status of server and local.
+- [ ] how to handle multiple socks reqeusts?
 
