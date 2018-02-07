@@ -167,7 +167,7 @@ func main() {
 	}
 	config = c
 	dbgLog = depot.SetDebug(config.Debug)
-	clog.Println("depot-server")
+	clog.Printf("depot-server [%v]\n", depot.VERSION)
 
 	go serveControl(listenAddr, strconv.Itoa(config.ControlPort),
 		strconv.Itoa(config.TunnelPort))

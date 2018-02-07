@@ -21,7 +21,8 @@ type Config struct {
 	path string      // path of the configuration file
 }
 
-const defaultConfig = `{
+const (
+	defaultConfig = `{
 	"server_addr": "127.0.0.1",
 	"server_port": 8864,
 	"control_port": 8964,
@@ -31,6 +32,8 @@ const defaultConfig = `{
 	"password": "password",
 	"debug": false
 } `
+	VERSION = "0.0.1"
+)
 
 var readTimeout time.Duration
 

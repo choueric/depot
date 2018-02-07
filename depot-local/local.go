@@ -164,6 +164,7 @@ func run(server, ctrlPort, tunnelPort string) {
 }
 
 func init() {
+	clog.Printf("depot-local [%v]\n", depot.VERSION)
 	clog.SetFlags(clog.Ldate | clog.Ltime | clog.Lshortfile | clog.Lcolor)
 	flag.StringVar(&configFile, "c", configFile, "specify config file")
 	flag.Parse()
@@ -176,7 +177,6 @@ func main() {
 	}
 
 	dbgLog = depot.SetDebug(config.Debug)
-	dbgLog.Println("depot-local")
 
 	go run(config.ServerAddr, strconv.Itoa(config.ControlPort),
 		strconv.Itoa(config.TunnelPort))
