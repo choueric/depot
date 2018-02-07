@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/choueric/clog"
 	"github.com/choueric/depot"
@@ -109,29 +110,34 @@ func handleRequest(addrReq *depot.AddrReq, server, port string) error {
 }
 
 func run(server, port string) {
-	dbgLog.Printf("connect to server %s:%s\n", server, port)
-	serverConn, err := net.Dial("tcp", server+":"+port)
-	if err != nil {
-		clog.Fatal(err)
-	}
-	defer serverConn.Close()
-
-	err = handShake(serverConn)
-	if err != nil {
-		clog.Fatal("error handshaking with server: ", err)
-	}
-
 	for {
-		req, err := getRequest(serverConn)
+		dbgLog.Printf("connecting to server %s:%s\n", server, port)
+		serverConn, err := net.Dial("tcp", server+":"+port)
 		if err != nil {
-			clog.Error("get request from server fail: ", err)
-			if err == io.EOF {
-				os.Exit(0)
-			}
+			time.Sleep(1 * time.Second)
 			continue
 		}
+		defer serverConn.Close()
+		dbgLog.Printf("connected to server %s:%s\n", server, port)
 
-		go handleRequest(req, server, port)
+		err = handShake(serverConn)
+		if err != nil {
+			clog.Fatal("error handshaking with server: ", err)
+		}
+
+		for {
+			req, err := getRequest(serverConn)
+			if err != nil {
+				clog.Error("get request from server fail: ", err)
+				if err == io.EOF {
+					serverConn.Close()
+					break
+				}
+				continue
+			}
+
+			go handleRequest(req, server, port)
+		}
 	}
 }
 
