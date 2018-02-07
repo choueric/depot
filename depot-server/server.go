@@ -106,7 +106,7 @@ func serveTunnel(tunnelLn net.Listener, done <-chan struct{}) {
 }
 
 func serveControl(host, ctrlPort, tunnelPort string) {
-	ctrlLn := listen(host, ctrlPort, "control")
+	ctrlLn, err := listen(host, ctrlPort, "control")
 	if err != nil {
 		clog.Fatal("control", err)
 	}
