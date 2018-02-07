@@ -55,9 +55,9 @@ func handShake(server net.Conn) error {
 	return nil
 }
 
-func getRequest(server net.Conn) (*depot.AddrReq, error) {
+func getRequest(ctrlConn net.Conn) (*depot.AddrReq, error) {
 	buf := make([]byte, 256)
-	n, err := server.Read(buf)
+	n, err := ctrlConn.Read(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -73,9 +73,11 @@ func getRequest(server net.Conn) (*depot.AddrReq, error) {
 }
 
 func handleRequest(addrReq *depot.AddrReq, server, port string) error {
-	tunnelConn, err := net.Dial("tcp", net.JoinHostPort(server, port))
+	addr := net.JoinHostPort(server, port)
+	tunnelConn, err := net.Dial("tcp", addr)
 	if err != nil {
-		clog.Fatal("error connecting to %s:%s: %v\n", server, port, err)
+		clog.Error("dial tunnel %v error: %v\n", addr, err)
+		return err
 	}
 
 	closed := false
@@ -85,7 +87,6 @@ func handleRequest(addrReq *depot.AddrReq, server, port string) error {
 		}
 	}()
 
-	// send tunnel handshake
 	dbgLog.Println("send tunnel handshake:", addrReq.Raw)
 	_, err = tunnelConn.Write(addrReq.Raw)
 	if err != nil {
@@ -94,7 +95,7 @@ func handleRequest(addrReq *depot.AddrReq, server, port string) error {
 
 	appConn, err := net.Dial("tcp", addrReq.Address())
 	if err != nil {
-		clog.Error("error connecting to:", addrReq)
+		clog.Error("dial app %v error: \n", addrReq, err)
 		return err
 	}
 	defer func() {
@@ -106,37 +107,58 @@ func handleRequest(addrReq *depot.AddrReq, server, port string) error {
 	go depot.PipeThenClose(tunnelConn, appConn)
 	depot.PipeThenClose(appConn, tunnelConn)
 	closed = true
+	dbgLog.Println("closed connection to", addrReq)
 	return nil
 }
 
-func run(server, port string) {
+func sayAlive(ctrlConn net.Conn, done <-chan struct{}) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
 	for {
-		dbgLog.Printf("connecting to server %s:%s\n", server, port)
-		serverConn, err := net.Dial("tcp", server+":"+port)
+		select {
+		case <-done:
+			return
+		case <-ticker.C:
+			ctrlConn.Write([]byte(depot.TunnelAliveMsg))
+		}
+	}
+}
+
+func run(server, ctrlPort, tunnelPort string) {
+	addr := net.JoinHostPort(server, ctrlPort)
+	for {
+		dbgLog.Printf("try to connect server ... ")
+		ctrlConn, err := net.Dial("tcp", addr)
 		if err != nil {
-			time.Sleep(1 * time.Second)
+			dbgLog.Warn(err)
+			time.Sleep(2 * time.Second)
 			continue
 		}
-		defer serverConn.Close()
-		dbgLog.Printf("connected to server %s:%s\n", server, port)
+		dbgLog.Printf("done via %v\n", ctrlConn.LocalAddr())
 
-		err = handShake(serverConn)
+		err = handShake(ctrlConn)
 		if err != nil {
-			clog.Fatal("error handshaking with server: ", err)
+			clog.Error("error handshaking: ", err)
+			ctrlConn.Close()
+			continue
 		}
 
+		done := make(chan struct{})
+		go sayAlive(ctrlConn, done)
+
 		for {
-			req, err := getRequest(serverConn)
-			if err != nil {
-				clog.Error("get request from server fail: ", err)
+			req, err := getRequest(ctrlConn)
+			if err != nil { // control connction is down
+				clog.Error("control connction error: ", err)
 				if err == io.EOF {
-					serverConn.Close()
+					ctrlConn.Close()
+					close(done)
 					break
 				}
 				continue
 			}
 
-			go handleRequest(req, server, port)
+			go handleRequest(req, server, tunnelPort)
 		}
 	}
 }
@@ -148,16 +170,15 @@ func init() {
 }
 
 func main() {
-
 	config, err := depot.GetConfig(configFile)
 	if err != nil {
-		dbgLog.Error("get configuration error: %v\n", err)
-		return
+		dbgLog.Fatal("get configuration error: %v\n", err)
 	}
 
 	dbgLog = depot.SetDebug(config.Debug)
 	dbgLog.Println("depot-local")
 
-	go run(config.ServerAddr, strconv.Itoa(config.TunnelPort))
+	go run(config.ServerAddr, strconv.Itoa(config.ControlPort),
+		strconv.Itoa(config.TunnelPort))
 	waitSignal()
 }

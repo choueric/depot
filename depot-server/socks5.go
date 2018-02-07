@@ -167,12 +167,14 @@ func socksAuthticate(conn net.Conn) (err error) {
 }
 
 /*
+client:
    +----+-----+-------+------+----------+----------+
    |VER | CMD |  RSV  | ATYP | DST.ADDR | DST.PORT |
    +----+-----+-------+------+----------+----------+
    | 1  |  1  | X'00' |  1   | Variable |    2     |
    +----+-----+-------+------+----------+----------+
 
+server:
    +----+-----+-------+------+----------+----------+
    |VER | REP |  RSV  | ATYP | BND.ADDR | BND.PORT |
    +----+-----+-------+------+----------+----------+
@@ -229,7 +231,6 @@ func getSocksRequest(conn net.Conn) (addrReq *depot.AddrReq, err error) {
 	// Sending connection established message immediately to client.
 	// This some round trip time for creating socks connection with the client.
 	// But if connection failed, the client will get connection reset error.
-	// TODO: BND.PORT(0x08, 0x43) is not the actual port number
 	reply := []byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x08, 0x43}
 	if _, err = conn.Write(reply); err != nil {
 		clog.Error("send connection confirmation:", err)
@@ -239,19 +240,22 @@ func getSocksRequest(conn net.Conn) (addrReq *depot.AddrReq, err error) {
 	return
 }
 
-// dialTunnel sends request address to local and waits for local's new tunnel
+// getTunnel sends request address to local and waits for local's new tunnel
 // connection, shakes hand with it.
-func dialTunnel(ctrlConn net.Conn, addrReq *depot.AddrReq) (net.Conn, error) {
+func getTunnel(ctrlConn net.Conn, addrReq *depot.AddrReq) (net.Conn, error) {
+	// send socks reqeust to local via control connection
 	if _, err := ctrlConn.Write(addrReq.Raw); err != nil {
 		return nil, err
 	}
-	c := <-tunnelChan
-	dbgLog.Println("get new tunnel connection:", c.RemoteAddr())
+
+	// wait for local's connection on tunnel port
+	tunnelConn := <-ctrlInfo.tunnelChan
+	dbgLog.Println("get new tunnel connection:", tunnelConn.RemoteAddr())
 
 	// receive and check the socksraw handshake msg
 	// FIXME: If there are many new tunnels, socksraw may not match
 	buf := make([]byte, 256)
-	n, err := io.ReadAtLeast(c, buf, 5)
+	n, err := io.ReadAtLeast(tunnelConn, buf, 5)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +264,7 @@ func dialTunnel(ctrlConn net.Conn, addrReq *depot.AddrReq) (net.Conn, error) {
 	if !bytes.Equal(buf[0:n], addrReq.Raw) {
 		return nil, errors.New("socksraw does not match")
 	}
-	return c, nil
+	return tunnelConn, nil
 }
 
 func handleSocks5Conn(socksConn net.Conn) (err error) {
@@ -291,7 +295,7 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 	dbgLog.Println("request address:", addrReq)
 
 	// handle the request to local
-	tunnelConn, err := dialTunnel(controlConn, addrReq)
+	tunnelConn, err := getTunnel(ctrlInfo.ctrlConn, addrReq)
 	if err != nil {
 		clog.Error("Failed connect to local")
 		return

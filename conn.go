@@ -10,6 +10,7 @@ import (
 const (
 	TunnelHelloMsg = "hello server"
 	TunnelReplyMsg = "hello local"
+	TunnelAliveMsg = "I'm alive"
 )
 
 //  address request from socks5
