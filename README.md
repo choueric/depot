@@ -176,13 +176,16 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
                            +---+
 ```
 
+The final pipeline is:
 
+```
          socksConn <--> tunnelConn <--> appConn
-		 
-    The ctrlConn is used by local to send alive message. And once local exits,
-	this connection would be closed. In the other hand, once server exits, local
-	should close all connections and try to connect to control port of server 
-	again and again.
+```
+
+The ctrlConn is used by local to send alive message. And once local exits, this
+connection would be closed. In the other hand, once server exits, local should
+close all connections and try to connect to control port of server again and
+again.
 
 # TODO
 
