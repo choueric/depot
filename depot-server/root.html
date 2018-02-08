@@ -11,9 +11,20 @@
 		  <li><a href="http://ericnode.info" id=homeLink>Author</a></li>
 		</ul>
 
-		<h1> depot v{{.Version}} </h1>
+		<h1> Depot Server Status </h1>
 
-		<p title="IP addresses">
+		<p>
+		<table>
+			<caption>Configuration</caption>
+			<tr><th>Type</th><th>Value</th></tr>
+			<tr><td>Version</td><td>{{.Version}}</td></tr>
+			<tr><td>Socks Port</td><td>{{.SocksPort}}</td></tr>
+			<tr><td>Control Port</td><td>{{.CtrlPort}}</td></tr>
+		</table>
+		</p>
+		<hr>
+
+		<p>
 		<table>
 			<caption>Connection Status</caption>
 			<tr><th>Type</th><th>Host</th></tr>

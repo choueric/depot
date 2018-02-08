@@ -12,6 +12,8 @@ import (
 
 type webInfoT struct {
 	Version    string
+	SocksPort  int
+	CtrlPort   int
 	CtrlAddr   string
 	TunnelHost string
 	dir        string
@@ -21,6 +23,8 @@ var webInfo webInfoT
 
 func initWebInfo() {
 	webInfo.Version = depot.VERSION
+	webInfo.SocksPort = config.ServerPort
+	webInfo.CtrlPort = config.ControlPort
 	webInfo.dir = depot.GetDefaultConfigDir()
 }
 
@@ -28,9 +32,8 @@ func updateWebInfo() {
 	if ctrlInfo.ctrlConn != nil {
 		webInfo.CtrlAddr = ctrlInfo.ctrlConn.RemoteAddr().String()
 	} else {
-		webInfo.CtrlAddr = ""
+		webInfo.CtrlAddr = "No Connection"
 	}
-	dbgLog.Println("CtrlAddr", webInfo.CtrlAddr)
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
