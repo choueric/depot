@@ -34,6 +34,6 @@ ssh:
 		--proxy-auth user:password %h %p' 127.0.0.1 -p 22
 
 install:
-	install -d $(DIR)/js $(DIR)/css
+	mkdir -p $(DIR)/js $(DIR)/css
 	cd $(DIR); rm -rf *.html js css
 	cd $(PREFIX)-server; cp -v -a *.html js css $(DIR)
