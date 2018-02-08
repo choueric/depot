@@ -34,7 +34,7 @@ const (
 	"password": "password",
 	"debug": false
 } `
-	VERSION = "0.0.1"
+	VERSION = "0.0.2"
 )
 
 var readTimeout time.Duration
