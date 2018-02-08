@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<title> Depot </title>
+		<link rel="stylesheet" href="css/index.css">
+	</head>
+
+	<body>
+
+		<ul>
+		  <li><a href="http://github.com/choueric/depot">Home</a></li>
+		  <li><a href="http://ericnode.info" id=homeLink>Author</a></li>
+		</ul>
+
+		<h1> depot v{{.Version}} </h1>
+
+		<p title="IP addresses">
+		<table>
+			<caption>Connection Status</caption>
+			<tr><th>Type</th><th>Host</th></tr>
+			<tr><td>Control</td><td>{{.CtrlAddr}}</td></tr>
+		</table>
+		</p>
+		<hr>
+
+	</body>
+
+</html>

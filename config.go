@@ -12,6 +12,7 @@ type Config struct {
 	ServerPort  int    `json:"server_port"`
 	ControlPort int    `json:"control_port"`
 	TunnelPort  int    `json:"tunnel_port"`
+	WebPort     int    `json:"web_port"`
 	UserName    string `json:"user_name"`
 	Password    string `json:"password"`
 	Timeout     int    `json:"timeout"` // unit: second
@@ -27,6 +28,7 @@ const (
 	"server_port": 8864,
 	"control_port": 8964,
 	"tunnel_port": 9064,
+	"web_port": 8888,
 	"timeout": 600,
 	"user_name": "user",
 	"password": "password",
@@ -39,6 +41,10 @@ var readTimeout time.Duration
 
 func GetDefaultConfigPath() string {
 	return os.Getenv("HOME") + "/.depot/config.json"
+}
+
+func GetDefaultConfigDir() string {
+	return os.Getenv("HOME") + "/.depot"
 }
 
 func GetConfig(filepath string) (*Config, error) {

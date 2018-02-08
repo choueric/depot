@@ -169,6 +169,9 @@ func main() {
 	dbgLog = depot.SetDebug(config.Debug)
 	clog.Printf("depot-server [%v]\n", depot.VERSION)
 
+	if config.WebPort != 0 {
+		go serveWeb(listenAddr, strconv.Itoa(config.WebPort))
+	}
 	go serveControl(listenAddr, strconv.Itoa(config.ControlPort),
 		strconv.Itoa(config.TunnelPort))
 	serveSocks5(listenAddr, strconv.Itoa(config.ServerPort))

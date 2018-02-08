@@ -2,6 +2,8 @@ PREFIX := depot
 LOCAL := $(GOPATH)/bin/$(PREFIX)-local
 SERVER := $(GOPATH)/bin/$(PREFIX)-server
 
+DIR:=$(HOME)/.depot
+
 all: $(LOCAL) $(SERVER)
 
 .PHONY: clean
@@ -30,3 +32,7 @@ curl:
 ssh:
 	ssh -o ProxyCommand='ncat --proxy 127.0.0.1:8864 --proxy-type socks5 \
 		--proxy-auth user:password %h %p' 127.0.0.1 -p 22
+
+install:
+	cd $(DIR); rm -rf *.html js css
+	cd $(PREFIX)-server; cp -v -a *.html js css $(DIR)
