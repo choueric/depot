@@ -1,8 +1,8 @@
 # depot
 
-Proxy program using socks5
-
-# structure
+Proxy program using socks5 to create tunnel between client application and your 
+internal net host. For example, it's useful for connecting the transmission
+on your host NAS by transmission-remote-gui on anywhere, as shown below:
 
 ```
 --- client ---+------- server -------+------- local ------------------
@@ -10,7 +10,18 @@ Proxy program using socks5
 client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
 ```
 
-# connections
+Once the socks connection is established, the reqeust of `client` must be sent to
+address `127.0.0.1:port` via this connection and it will be transferred to `app`
+eventually. It seems `client` is communicating with `app` directly.
+
+# Features
+
+* Web interface to wathch status of connections.
+* Socks5 connection (username/no-username)
+
+# Internal
+
+## connections
 
 - control connection
   - connect server and local
@@ -27,7 +38,7 @@ client <--[socks5]--> depot-server <---> depot-local <--[localhost]--> app
   - connect local and app
   - for pipe
 
-# process
+## process
 
 1. Server listens on the control port and socks port.
 ```
@@ -189,8 +200,11 @@ again.
 
 # TODO
 
-- [ ] local should try to connect to server repeatly and send heartbeat message
+- [X] local should try to connect to server repeatly and send heartbeat message
       to server after connecting.
-- [ ] provide methods to watch the status of server and local.
+- [X] provide methods to watch the status of server and local.
 - [ ] how to handle multiple socks reqeusts?
 
+# License
+
+See the `LICENSE` file.
