@@ -309,6 +309,6 @@ func handleSocks5Conn(socksConn net.Conn) (err error) {
 	go depot.PipeThenClose(socksConn, tunnelConn)
 	depot.PipeThenClose(tunnelConn, socksConn)
 	closed = true
-	dbgLog.Println("closed connection to", addrReq)
+	dbgLog.Println("closed connection for addReq", addrReq)
 	return nil
 }
